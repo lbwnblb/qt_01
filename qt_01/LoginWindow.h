@@ -3,6 +3,10 @@
 #include <QWidget>
 #include <QPoint>
 
+class QStackedWidget;
+class RightPanel;
+class RegisterPanel;
+
 class LoginWindow : public QWidget {
     Q_OBJECT
 
@@ -16,4 +20,7 @@ protected:
 
 private:
     QPoint m_dragPos;
+    QStackedWidget* rightStack;
+    RightPanel* rightPanel;
+    RegisterPanel* registerPanel;
 };

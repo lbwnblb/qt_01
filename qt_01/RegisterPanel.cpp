@@ -1,19 +1,18 @@
-﻿#include "RightPanel.h"
+﻿#include "RegisterPanel.h"
 #include <QLineEdit>
 #include <QPushButton>
-#include <QCheckBox>
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
 
-RightPanel::RightPanel(QWidget* parent) : QWidget(parent) {
+RegisterPanel::RegisterPanel(QWidget* parent) : QWidget(parent) {
     setupUI();
 }
 
-void RightPanel::setupUI() {
-    setObjectName("rightPanel");
-    setStyleSheet("#rightPanel { background-color: white; }");
+void RegisterPanel::setupUI() {
+    setObjectName("registerPanel");
+    setStyleSheet("#registerPanel { background-color: white; }");
 
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(50, 25, 50, 30);
@@ -22,18 +21,24 @@ void RightPanel::setupUI() {
     setupTopBar(mainLayout);
     mainLayout->addSpacing(10);
     setupLogo(mainLayout);
-    mainLayout->addSpacing(30);
-    setupInputFields(mainLayout);
-    mainLayout->addSpacing(12);
-    setupLinks(mainLayout);
     mainLayout->addSpacing(20);
-    setupLoginButton(mainLayout);
+
+    // 标题
+    QLabel* titleLabel = new QLabel("免费注册");
+    titleLabel->setAlignment(Qt::AlignCenter);
+    titleLabel->setStyleSheet("font-size: 18px; font-weight: bold; color: #333;");
+    mainLayout->addWidget(titleLabel);
+
+    mainLayout->addSpacing(20);
+    setupInputFields(mainLayout);
+    mainLayout->addSpacing(20);
+    setupRegisterButton(mainLayout);
     mainLayout->addSpacing(15);
-    setupCheckBoxes(mainLayout);
+    setupBackLink(mainLayout);
     mainLayout->addStretch();
 }
 
-void RightPanel::setupTopBar(QVBoxLayout* mainLayout) {
+void RegisterPanel::setupTopBar(QVBoxLayout* mainLayout) {
     QHBoxLayout* topBar = new QHBoxLayout();
     topBar->addStretch();
 
@@ -69,7 +74,7 @@ void RightPanel::setupTopBar(QVBoxLayout* mainLayout) {
     mainLayout->addLayout(topBar);
 }
 
-void RightPanel::setupLogo(QVBoxLayout* mainLayout) {
+void RegisterPanel::setupLogo(QVBoxLayout* mainLayout) {
     QLabel* logoLabel = new QLabel();
     logoLabel->setFixedSize(60, 60);
     logoLabel->setAlignment(Qt::AlignCenter);
@@ -89,46 +94,33 @@ void RightPanel::setupLogo(QVBoxLayout* mainLayout) {
     mainLayout->addLayout(logoLayout);
 }
 
-void RightPanel::setupInputFields(QVBoxLayout* mainLayout) {
-    accountEdit = createInputField("👤", "请输入账号");
-    mainLayout->addWidget(accountEdit);
+void RegisterPanel::setupInputFields(QVBoxLayout* mainLayout) {
+    usernameEdit = createInputField("👤", "请输入用户名");
+    mainLayout->addWidget(usernameEdit);
 
-    mainLayout->addSpacing(15);
+    mainLayout->addSpacing(12);
+
+    phoneEdit = createInputField("📱", "请输入手机号");
+    mainLayout->addWidget(phoneEdit);
+
+    mainLayout->addSpacing(12);
 
     passwordEdit = createInputField("🔒", "请输入密码");
     passwordEdit->setEchoMode(QLineEdit::Password);
     mainLayout->addWidget(passwordEdit);
+
+    mainLayout->addSpacing(12);
+
+    confirmPasswordEdit = createInputField("🔒", "请确认密码");
+    confirmPasswordEdit->setEchoMode(QLineEdit::Password);
+    mainLayout->addWidget(confirmPasswordEdit);
 }
 
-void RightPanel::setupLinks(QVBoxLayout* mainLayout) {
-    QHBoxLayout* linksLayout = new QHBoxLayout();
-
-    auto makeLink = [](const QString& text, const QString& color = "#4facfe") -> QPushButton* {
-        QPushButton* btn = new QPushButton(text);
-        btn->setCursor(Qt::PointingHandCursor);
-        btn->setStyleSheet(
-            QString("QPushButton { border: none; color: %1; font-size: 12px; background: transparent; }"
-                "QPushButton:hover { color: #3b8dd9; }").arg(color)
-        );
-        return btn;
-        };
-
-    linksLayout->addStretch();
-    QPushButton* registerLink = makeLink("免费注册", "#333");
-    linksLayout->addWidget(registerLink);
-    connect(registerLink, &QPushButton::clicked, [this]() {
-        emit registerClicked();
-        });
-    linksLayout->addSpacing(15);
-    linksLayout->addWidget(makeLink("忘记密码", "#333"));
-    mainLayout->addLayout(linksLayout);
-}
-
-void RightPanel::setupLoginButton(QVBoxLayout* mainLayout) {
-    QPushButton* loginBtn = new QPushButton("登 录");
-    loginBtn->setFixedHeight(45);
-    loginBtn->setCursor(Qt::PointingHandCursor);
-    loginBtn->setStyleSheet(
+void RegisterPanel::setupRegisterButton(QVBoxLayout* mainLayout) {
+    QPushButton* registerBtn = new QPushButton("注 册");
+    registerBtn->setFixedHeight(45);
+    registerBtn->setCursor(Qt::PointingHandCursor);
+    registerBtn->setStyleSheet(
         "QPushButton {"
         "  background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
         "    stop:0 #4facfe, stop:1 #42b0ff);"
@@ -149,50 +141,57 @@ void RightPanel::setupLoginButton(QVBoxLayout* mainLayout) {
         "}"
     );
 
-    connect(loginBtn, &QPushButton::clicked, [this]() {
-        QString account = accountEdit->text().trimmed();
+    connect(registerBtn, &QPushButton::clicked, [this]() {
+        QString username = usernameEdit->text().trimmed();
+        QString phone = phoneEdit->text().trimmed();
         QString password = passwordEdit->text().trimmed();
+        QString confirmPassword = confirmPasswordEdit->text().trimmed();
 
-        if (account.isEmpty() || password.isEmpty()) {
-            QMessageBox::warning(this, "提示", "请输入账号和密码！");
+        if (username.isEmpty() || phone.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            QMessageBox::warning(this, "提示", "请填写所有字段！");
             return;
         }
 
-        if (account == "admin" && password == "123456") {
-            QMessageBox::information(this, "登录成功",
-                QString("欢迎回来，%1！").arg(account));
+        if (password != confirmPassword) {
+            QMessageBox::warning(this, "提示", "两次输入的密码不一致！");
+            return;
         }
-        else {
-            QMessageBox::warning(this, "登录失败",
-                "账号或密码错误！\n\n提示：默认账号 admin，密码 123456");
+
+        if (password.length() < 6) {
+            QMessageBox::warning(this, "提示", "密码长度不能少于6位！");
+            return;
         }
+
+        QMessageBox::information(this, "注册成功",
+            QString("恭喜 %1，注册成功！\n即将返回登录页面。").arg(username));
+
+        emit backToLogin();
         });
 
-    mainLayout->addWidget(loginBtn);
+    mainLayout->addWidget(registerBtn);
 }
 
-void RightPanel::setupCheckBoxes(QVBoxLayout* mainLayout) {
-    QHBoxLayout* checkLayout = new QHBoxLayout();
-    checkLayout->addStretch();
+void RegisterPanel::setupBackLink(QVBoxLayout* mainLayout) {
+    QHBoxLayout* linkLayout = new QHBoxLayout();
+    linkLayout->addStretch();
 
-    rememberCheck = new QCheckBox("记住密码");
-    rememberCheck->setStyleSheet(
-        "QCheckBox { font-size: 12px; color: #666; spacing: 5px; }"
-        "QCheckBox::indicator { width: 14px; height: 14px; border: 1px solid #ccc; border-radius: 3px; }"
-        "QCheckBox::indicator:checked { background: #4facfe; border-color: #4facfe; image: url(checkmark.png); }"
+    QPushButton* backBtn = new QPushButton("已有账号？返回登录");
+    backBtn->setCursor(Qt::PointingHandCursor);
+    backBtn->setStyleSheet(
+        "QPushButton { border: none; color: #4facfe; font-size: 12px; background: transparent; }"
+        "QPushButton:hover { color: #3b8dd9; }"
     );
 
-    autoLoginCheck = new QCheckBox("自动登录");
-    autoLoginCheck->setStyleSheet(rememberCheck->styleSheet());
+    connect(backBtn, &QPushButton::clicked, [this]() {
+        emit backToLogin();
+        });
 
-    checkLayout->addWidget(rememberCheck);
-    checkLayout->addSpacing(40);
-    checkLayout->addWidget(autoLoginCheck);
-    checkLayout->addStretch();
-    mainLayout->addLayout(checkLayout);
+    linkLayout->addWidget(backBtn);
+    linkLayout->addStretch();
+    mainLayout->addLayout(linkLayout);
 }
 
-QLineEdit* RightPanel::createInputField(const QString& icon, const QString& placeholder) {
+QLineEdit* RegisterPanel::createInputField(const QString& icon, const QString& placeholder) {
     QLineEdit* edit = new QLineEdit();
     edit->setPlaceholderText(placeholder);
     edit->setFixedHeight(45);

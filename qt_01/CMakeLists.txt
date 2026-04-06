@@ -17,5 +17,7 @@ qt_add_executable(qt_01 WIN32
     LeftPanel.cpp
     RightPanel.h
     RightPanel.cpp
+    RegisterPanel.h
+    RegisterPanel.cpp
 )
 target_link_libraries(qt_01 PRIVATE Qt6::Widgets)

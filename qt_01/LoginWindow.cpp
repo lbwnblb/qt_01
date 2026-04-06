@@ -1,7 +1,9 @@
 ﻿#include "LoginWindow.h"
 #include "LeftPanel.h"
 #include "RightPanel.h"
+#include "RegisterPanel.h"
 #include <QHBoxLayout>
+#include <QStackedWidget>
 #include <QPainter>
 #include <QPainterPath>
 #include <QMouseEvent>
@@ -17,10 +19,24 @@ LoginWindow::LoginWindow(QWidget* parent) : QWidget(parent) {
     layout->setSpacing(0);
 
     LeftPanel* leftPanel = new LeftPanel();
-    RightPanel* rightPanel = new RightPanel();
+
+    rightStack = new QStackedWidget();
+    rightPanel = new RightPanel();
+    registerPanel = new RegisterPanel();
+
+    rightStack->addWidget(rightPanel);
+    rightStack->addWidget(registerPanel);
+    rightStack->setCurrentIndex(0);
+
+    connect(rightPanel, &RightPanel::registerClicked, [this]() {
+        rightStack->setCurrentIndex(1);
+        });
+    connect(registerPanel, &RegisterPanel::backToLogin, [this]() {
+        rightStack->setCurrentIndex(0);
+        });
 
     layout->addWidget(leftPanel);
-    layout->addWidget(rightPanel);
+    layout->addWidget(rightStack);
 }
 
 void LoginWindow::paintEvent(QPaintEvent*) {

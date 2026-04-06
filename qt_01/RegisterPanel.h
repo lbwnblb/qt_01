@@ -3,31 +3,29 @@
 #include <QWidget>
 
 class QLineEdit;
-class QCheckBox;
 class QVBoxLayout;
 
-class RightPanel : public QWidget {
+class RegisterPanel : public QWidget {
     Q_OBJECT
 
 public:
-    explicit RightPanel(QWidget* parent = nullptr);
+    explicit RegisterPanel(QWidget* parent = nullptr);
 
 signals:
-    void registerClicked();
+    void backToLogin();
 
 private:
-    QLineEdit* accountEdit;
+    QLineEdit* usernameEdit;
     QLineEdit* passwordEdit;
-    QCheckBox* rememberCheck;
-    QCheckBox* autoLoginCheck;
+    QLineEdit* confirmPasswordEdit;
+    QLineEdit* phoneEdit;
 
     void setupUI();
     void setupTopBar(QVBoxLayout* mainLayout);
     void setupLogo(QVBoxLayout* mainLayout);
     void setupInputFields(QVBoxLayout* mainLayout);
-    void setupLinks(QVBoxLayout* mainLayout);
-    void setupLoginButton(QVBoxLayout* mainLayout);
-    void setupCheckBoxes(QVBoxLayout* mainLayout);
+    void setupRegisterButton(QVBoxLayout* mainLayout);
+    void setupBackLink(QVBoxLayout* mainLayout);
 
     QLineEdit* createInputField(const QString& icon, const QString& placeholder);
 };
