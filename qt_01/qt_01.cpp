@@ -15,7 +15,7 @@
 #include <QGraphicsDropShadowEffect>
 #include <QLinearGradient>
 #include <QPainterPath>
-
+#include <QMouseEvent>
 // ==================== 左侧面板 ====================
 class LeftPanel : public QWidget {
 public:
@@ -127,8 +127,7 @@ private:
     QCheckBox* autoLoginCheck;
 
     void setupUI() {
-        setObjectName("rightPanel");
-        setStyleSheet("#rightPanel { background-color: white; }");
+        setStyleSheet("background-color: white;");
 
         QVBoxLayout* mainLayout = new QVBoxLayout(this);
         mainLayout->setContentsMargins(50, 25, 50, 30);
@@ -208,19 +207,7 @@ private:
             "  selection-background-color: #f0f7ff;"
             "  selection-color: #333;"
             "  background: white;"
-            "  color: #333;"
             "  padding: 5px;"
-            "  outline: none;"
-            "}"
-            "QComboBox QAbstractItemView::item {"
-            "  height: 36px;"
-            "  padding: 6px 15px;"
-            "  background: white;"
-            "  color: #333;"
-            "}"
-            "QComboBox QAbstractItemView::item:selected {"
-            "  background: #f0f7ff;"
-            "  color: #333;"
             "}"
         );
         mainLayout->addWidget(platformCombo);
