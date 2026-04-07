@@ -6,8 +6,23 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QUrl>
+#include <QDebug>
+
+// Debug 模式用本地地址，Release 模式用线上地址
+#ifdef QT_DEBUG
+static const QString BASE_URL = "http://0.0.0.0:2781";
+#else
+static const QString BASE_URL = "https://agent.aiyiyong.com";
+#endif
 
 RightPanel::RightPanel(QWidget* parent) : QWidget(parent) {
+    networkManager = new QNetworkAccessManager(this);
     setupUI();
 }
 
@@ -22,7 +37,17 @@ void RightPanel::setupUI() {
     setupTopBar(mainLayout);
     mainLayout->addSpacing(10);
     setupLogo(mainLayout);
-    mainLayout->addSpacing(30);
+    mainLayout->addSpacing(20);
+
+    // 状态提示标签（账号输入框上方）
+    statusLabel = new QLabel();
+    statusLabel->setAlignment(Qt::AlignCenter);
+    statusLabel->setFixedHeight(20);
+    statusLabel->setStyleSheet("font-size: 13px; color: #e81123; background: transparent;");
+    statusLabel->hide();
+    mainLayout->addWidget(statusLabel);
+    mainLayout->addSpacing(10);
+
     setupInputFields(mainLayout);
     mainLayout->addSpacing(12);
     setupLinks(mainLayout);
@@ -125,7 +150,7 @@ void RightPanel::setupLinks(QVBoxLayout* mainLayout) {
 }
 
 void RightPanel::setupLoginButton(QVBoxLayout* mainLayout) {
-    QPushButton* loginBtn = new QPushButton("登 录");
+    loginBtn = new QPushButton("登 录");
     loginBtn->setFixedHeight(45);
     loginBtn->setCursor(Qt::PointingHandCursor);
     loginBtn->setStyleSheet(
@@ -149,26 +174,131 @@ void RightPanel::setupLoginButton(QVBoxLayout* mainLayout) {
         "}"
     );
 
-    connect(loginBtn, &QPushButton::clicked, [this]() {
-        QString account = accountEdit->text().trimmed();
-        QString password = passwordEdit->text().trimmed();
-
-        if (account.isEmpty() || password.isEmpty()) {
-            QMessageBox::warning(this, "提示", "请输入账号和密码！");
-            return;
-        }
-
-        if (account == "admin" && password == "123456") {
-            QMessageBox::information(this, "登录成功",
-                QString("欢迎回来，%1！").arg(account));
-        }
-        else {
-            QMessageBox::warning(this, "登录失败",
-                "账号或密码错误！\n\n提示：默认账号 admin，密码 123456");
-        }
-        });
+    connect(loginBtn, &QPushButton::clicked, this, &RightPanel::doLogin);
 
     mainLayout->addWidget(loginBtn);
+}
+
+void RightPanel::doLogin() {
+    QString account = accountEdit->text().trimmed();
+    QString password = passwordEdit->text().trimmed();
+
+    if (account.isEmpty() || password.isEmpty()) {
+        statusLabel->setStyleSheet("font-size: 13px; color: #e81123; background: transparent;");
+        statusLabel->setText("请输入账号和密码！");
+        statusLabel->show();
+        return;
+    }
+
+    // 隐藏之前的提示
+    statusLabel->hide();
+
+    // 禁用登录按钮，防止重复点击
+    loginBtn->setEnabled(false);
+    loginBtn->setText("登录中...");
+
+    // 构造 JSON 请求体
+    QJsonObject json;
+    json["user_name"] = account;
+    json["password"] = password;
+    QJsonDocument doc(json);
+
+    QByteArray requestBody = doc.toJson(QJsonDocument::Compact);
+    qDebug() << "========== 登录请求 ==========";
+    qDebug() << "URL:" << BASE_URL + "/api/login";
+    qDebug() << "请求体:" << requestBody;
+
+    // 发送 HTTP POST 请求
+    QNetworkRequest request(QUrl(BASE_URL + "/api/login"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QNetworkReply* reply = networkManager->post(request, requestBody);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply, account]() {
+        // 恢复按钮状态
+        loginBtn->setEnabled(true);
+        loginBtn->setText("登 录");
+
+        int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        QByteArray responseData = reply->readAll();
+
+        qDebug() << "========== 登录响应 ==========";
+        qDebug() << "HTTP 状态码:" << statusCode;
+        qDebug() << "网络错误码:" << reply->error();
+        qDebug() << "错误描述:" << reply->errorString();
+        qDebug() << "响应头:";
+        for (const auto& header : reply->rawHeaderList()) {
+            qDebug() << "  " << header << ":" << reply->rawHeader(header);
+        }
+        qDebug() << "响应体:" << responseData;
+        qDebug() << "==============================";
+
+        if (reply->error() == QNetworkReply::NoError) {
+            QJsonParseError parseError;
+            QJsonDocument responseDoc = QJsonDocument::fromJson(responseData, &parseError);
+
+            if (parseError.error != QJsonParseError::NoError) {
+                qDebug() << "JSON 解析失败:" << parseError.errorString();
+                statusLabel->setStyleSheet("font-size: 13px; color: #e81123; background: transparent;");
+                statusLabel->setText("服务器返回数据格式错误");
+                statusLabel->show();
+                reply->deleteLater();
+                return;
+            }
+
+            QJsonObject responseObj = responseDoc.object();
+            qDebug() << "解析后的 JSON:" << responseObj;
+
+            // 后端统一格式: {"code": 200, "msg": "success", "data": {"token": "..."}}
+            int code = responseObj.value("code").toInt();
+            QString msg = responseObj.value("msg").toString();
+            qDebug() << "业务码:" << code << "消息:" << msg;
+
+            if (code == 200) {
+                QJsonObject dataObj = responseObj.value("data").toObject();
+                QString token = dataObj.value("token").toString();
+                qDebug() << "获取到 token:" << token;
+                m_token = token;
+                // 成功：绿色显示
+                statusLabel->setStyleSheet("font-size: 13px; color: #27ae60; background: transparent;");
+                statusLabel->setText(QString("[%1] 登录成功，欢迎 %2！").arg(code).arg(account));
+                statusLabel->show();
+                emit loginSuccess(token);
+            }
+            else {
+                // 失败：红色显示，带响应码
+                statusLabel->setStyleSheet("font-size: 13px; color: #e81123; background: transparent;");
+                statusLabel->setText(QString("[%1] %2").arg(code).arg(msg));
+                statusLabel->show();
+            }
+        }
+        else {
+            // 网络错误处理
+            QString errorMsg;
+            if (reply->error() == QNetworkReply::ConnectionRefusedError) {
+                errorMsg = "无法连接到服务器，请确认服务器已启动";
+            }
+            else if (reply->error() == QNetworkReply::TimeoutError) {
+                errorMsg = "连接超时，请稍后重试";
+            }
+            else {
+                QJsonDocument responseDoc = QJsonDocument::fromJson(responseData);
+                if (!responseDoc.isNull()) {
+                    QJsonObject responseObj = responseDoc.object();
+                    errorMsg = responseObj.value("msg").toString();
+                }
+                if (errorMsg.isEmpty()) {
+                    errorMsg = reply->errorString();
+                }
+            }
+            qDebug() << "登录失败:" << errorMsg;
+            statusLabel->setStyleSheet("font-size: 13px; color: #e81123; background: transparent;");
+            statusLabel->setText(QString("[网络错误] %1").arg(errorMsg));
+            statusLabel->show();
+        }
+
+        reply->deleteLater();
+        });
 }
 
 void RightPanel::setupCheckBoxes(QVBoxLayout* mainLayout) {

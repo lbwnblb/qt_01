@@ -5,6 +5,9 @@
 class QLineEdit;
 class QCheckBox;
 class QVBoxLayout;
+class QNetworkAccessManager;
+class QPushButton;
+class QLabel;
 
 class RightPanel : public QWidget {
     Q_OBJECT
@@ -14,12 +17,17 @@ public:
 
 signals:
     void registerClicked();
+    void loginSuccess(const QString& token);
 
 private:
     QLineEdit* accountEdit;
     QLineEdit* passwordEdit;
     QCheckBox* rememberCheck;
     QCheckBox* autoLoginCheck;
+    QNetworkAccessManager* networkManager;
+    QPushButton* loginBtn;
+    QLabel* statusLabel;
+    QString m_token;
 
     void setupUI();
     void setupTopBar(QVBoxLayout* mainLayout);
@@ -28,6 +36,7 @@ private:
     void setupLinks(QVBoxLayout* mainLayout);
     void setupLoginButton(QVBoxLayout* mainLayout);
     void setupCheckBoxes(QVBoxLayout* mainLayout);
+    void doLogin();
 
     QLineEdit* createInputField(const QString& icon, const QString& placeholder);
 };

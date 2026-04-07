@@ -3,38 +3,29 @@
 #include <QWidget>
 
 class QLineEdit;
-class QCheckBox;
 class QVBoxLayout;
-class QNetworkAccessManager;
-class QPushButton;
 
-class RightPanel : public QWidget {
+class RegisterPanel : public QWidget {
     Q_OBJECT
 
 public:
-    explicit RightPanel(QWidget* parent = nullptr);
+    explicit RegisterPanel(QWidget* parent = nullptr);
 
 signals:
-    void registerClicked();
-    void loginSuccess(const QString& token);
+    void backToLogin();
 
 private:
-    QLineEdit* accountEdit;
+    QLineEdit* usernameEdit;
     QLineEdit* passwordEdit;
-    QCheckBox* rememberCheck;
-    QCheckBox* autoLoginCheck;
-    QNetworkAccessManager* networkManager;
-    QPushButton* loginBtn;
-    QString m_token;
+    QLineEdit* confirmPasswordEdit;
+    QLineEdit* phoneEdit;
 
     void setupUI();
     void setupTopBar(QVBoxLayout* mainLayout);
     void setupLogo(QVBoxLayout* mainLayout);
     void setupInputFields(QVBoxLayout* mainLayout);
-    void setupLinks(QVBoxLayout* mainLayout);
-    void setupLoginButton(QVBoxLayout* mainLayout);
-    void setupCheckBoxes(QVBoxLayout* mainLayout);
-    void doLogin();
+    void setupRegisterButton(QVBoxLayout* mainLayout);
+    void setupBackLink(QVBoxLayout* mainLayout);
 
     QLineEdit* createInputField(const QString& icon, const QString& placeholder);
 };
