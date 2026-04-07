@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 
 list(APPEND CMAKE_PREFIX_PATH "E:/Qt/6.11.0/msvc2022_64")
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
 
 qt_add_executable(qt_01 WIN32
     main.cpp
@@ -20,4 +20,4 @@ qt_add_executable(qt_01 WIN32
     RegisterPanel.h
     RegisterPanel.cpp
 )
-target_link_libraries(qt_01 PRIVATE Qt6::Widgets)
+target_link_libraries(qt_01 PRIVATE Qt6::Widgets Qt6::Network)
